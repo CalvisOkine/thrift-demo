@@ -1,0 +1,5 @@
+node_modules/
+*.log
+cloudflared-linux-amd64
+.env
+.DS_Store

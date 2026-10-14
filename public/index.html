@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Townsquar Ghana · Home</title>
+  <style>
+    :root {
+      --color-primary: #1a7a4c;
+      --color-primary-hover: #145e3a;
+      --color-bg: #ffffff;
+      --color-surface: #f8faf9;
+      --color-text: #1a1a1a;
+      --color-text-secondary: #5a5a5a;
+      --color-border: #e2e8e5;
+      --color-sale: #d9534f;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+      --max-width: 1200px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+
+    /* ============================================================
+       LOCATION MODAL (pre-permission popup)
+       ============================================================ */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background-color: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+    .modal-backdrop.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background-color: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+      max-width: 380px;
+      width: 100%;
+      padding: 32px 28px 28px;
+      text-align: center;
+      transform: translateY(12px) scale(0.98);
+      transition: transform 0.25s ease;
+    }
+    .modal-backdrop.is-open .modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal__icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background-color: #e8f5ee;
+      font-size: 1.75rem;
+      margin-bottom: 18px;
+    }
+
+    .modal__title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 8px;
+      color: var(--color-text);
+    }
+
+    .modal__text {
+      font-size: 0.9375rem;
+      color: var(--color-text-secondary);
+      line-height: 1.55;
+      margin-bottom: 24px;
+    }
+
+    .modal__primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 14px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      color: #ffffff;
+      background-color: var(--color-primary);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+    .modal__primary:hover:not(:disabled) { background-color: var(--color-primary-hover); }
+    .modal__primary:active:not(:disabled) { transform: scale(0.99); }
+    .modal__primary:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    .modal__spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+      margin-right: 8px;
+      vertical-align: -2px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---------- Header ---------- */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background-color: var(--color-bg);
+      border-bottom: 1px solid var(--color-border);
+      padding: 0 20px;
+    }
+    .header__inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header__brand {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--color-primary);
+      text-decoration: none;
+    }
+    .header__brand span { color: var(--color-text); }
+    .header__nav { display: flex; gap: 28px; list-style: none; }
+    .header__nav a {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .header__nav a:hover { color: var(--color-primary); }
+    .header__icons { display: flex; gap: 20px; align-items: center; }
+    .header__icon {
+      font-size: 1.25rem;
+      text-decoration: none;
+      color: var(--color-text);
+      position: relative;
+    }
+    .header__cart-count {
+      position: absolute;
+      top: -6px; right: -8px;
+      background-color: var(--color-primary);
+      color: #fff;
+      font-size: 0.625rem;
+      font-weight: 700;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ---------- Delivery bar ---------- */
+    .delivery-bar {
+      background-color: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      padding: 0 20px;
+    }
+    .delivery-bar__inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .delivery-bar__left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .delivery-bar__pin { font-size: 1rem; flex-shrink: 0; }
+    .delivery-bar__label {
+      font-size: 0.8125rem;
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+    }
+    .delivery-bar__value {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--color-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .delivery-bar__btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--color-primary);
+      background-color: transparent;
+      border: 1px solid var(--color-primary);
+      border-radius: 100px;
+      padding: 5px 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 0.2s;
+      flex-shrink: 0;
+    }
+    .delivery-bar__btn:hover:not(:disabled) { background-color: #e8f5ee; }
+    .delivery-bar__btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ---------- Hero ---------- */
+    .hero {
+      background: linear-gradient(135deg, #e8f5ee 0%, #f8faf9 100%);
+      padding: 64px 20px;
+      text-align: center;
+    }
+    .hero__inner { max-width: 600px; margin: 0 auto; }
+    .hero__badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-primary);
+      background-color: #ffffff;
+      padding: 6px 16px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .hero__title {
+      font-size: 2.25rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    .hero__subtitle {
+      font-size: 1.0625rem;
+      color: var(--color-text-secondary);
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+    .hero__actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 32px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      font-family: inherit;
+      border-radius: 8px;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 0.2s, transform 0.1s;
+      text-decoration: none;
+      border: none;
+    }
+    .btn--primary { color: #ffffff; background-color: var(--color-primary); }
+    .btn--primary:hover { background-color: var(--color-primary-hover); }
+    .btn--primary:active { transform: scale(0.98); }
+    .btn--outline {
+      color: var(--color-primary);
+      background-color: transparent;
+      border: 1.5px solid var(--color-primary);
+    }
+    .btn--outline:hover { background-color: #e8f5ee; }
+    .btn--outline:active { transform: scale(0.98); }
+
+    /* ---------- Sections ---------- */
+    .section {
+      padding: 56px 20px;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      width: 100%;
+    }
+    .section__header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .section__title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+    .section__link {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-primary);
+      text-decoration: none;
+    }
+    .section__link:hover { text-decoration: underline; }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    .category-card {
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 32px 20px;
+      text-align: center;
+      text-decoration: none;
+      color: var(--color-text);
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .category-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+    .category-card__icon { font-size: 2rem; display: block; margin-bottom: 12px; }
+    .category-card__label { font-size: 0.9375rem; font-weight: 600; }
+    .category-card__count {
+      font-size: 0.8125rem;
+      color: var(--color-text-secondary);
+      margin-top: 4px;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .product-card {
+      background-color: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .product-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+    .product-card__image {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background-color: #eef2f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: #b8c9c0;
+    }
+    .product-card__body { padding: 14px 16px 16px; }
+    .product-card__category {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-text-secondary);
+      margin-bottom: 4px;
+    }
+    .product-card__name {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+    .product-card__price { font-size: 1rem; font-weight: 700; color: var(--color-primary); }
+    .product-card__price--sale { color: var(--color-sale); }
+    .product-card__price del {
+      font-size: 0.8125rem;
+      font-weight: 400;
+      color: var(--color-text-secondary);
+      margin-left: 6px;
+    }
+
+    .features {
+      background-color: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+      padding: 40px 20px;
+    }
+    .features__inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    .feature { text-align: center; }
+    .feature__icon { font-size: 1.5rem; display: block; margin-bottom: 8px; }
+    .feature__title { font-size: 0.875rem; font-weight: 600; margin-bottom: 4px; }
+    .feature__desc {
+      font-size: 0.8125rem;
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+
+    .footer {
+      border-top: 1px solid var(--color-border);
+      padding: 40px 20px 20px;
+      padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    }
+    .footer__inner { max-width: var(--max-width); margin: 0 auto; }
+    .footer__grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+      margin-bottom: 32px;
+    }
+    .footer__brand {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+    }
+    .footer__brand span { color: var(--color-text); }
+    .footer__tagline {
+      font-size: 0.8125rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+      max-width: 320px;
+    }
+    .footer__heading {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 12px;
+    }
+    .footer__links { list-style: none; }
+    .footer__links li { margin-bottom: 8px; }
+    .footer__links a {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer__links a:hover { color: var(--color-primary); }
+    .footer__bottom {
+      border-top: 1px solid var(--color-border);
+      padding-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-size: 0.8125rem;
+      color: var(--color-text-secondary);
+      text-align: center;
+    }
+    .footer__bottom a { color: var(--color-primary); text-decoration: none; }
+    .footer__bottom a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .header__nav { display: none; }
+      .hero { padding: 48px 16px; }
+      .hero__title { font-size: 1.75rem; }
+      .section { padding: 40px 16px; }
+      .section__title { font-size: 1.25rem; }
+      .product-grid { gap: 14px; }
+      .product-card__body { padding: 12px 12px 14px; }
+      .product-card__name { font-size: 0.875rem; }
+    }
+    @media (min-width: 768px) {
+      .category-grid { grid-template-columns: repeat(4, 1fr); }
+      .product-grid { grid-template-columns: repeat(3, 1fr); }
+      .features__inner { grid-template-columns: repeat(4, 1fr); }
+      .footer__grid { grid-template-columns: 2fr 1fr 1fr 1fr; }
+      .footer__bottom { flex-direction: row; justify-content: space-between; text-align: left; }
+    }
+    @media (min-width: 1024px) {
+      .product-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       LOCATION MODAL (popup, Allow only)
+       ============================================================ -->
+  <div class="modal-backdrop" id="locationModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modal__icon">📍</div>
+      <h2 class="modal__title" id="modalTitle">Find stores near you</h2>
+      <p class="modal__text" id="modalText">
+        Allow location access so we can show accurate delivery times and sellers in your area.
+      </p>
+      <button class="modal__primary" id="modalAllow" type="button">
+        Allow location
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== HEADER ========== -->
+  <header class="header">
+    <div class="header__inner">
+      <a href="#" class="header__brand">Town<span>squar</span></a>
+      <nav>
+        <ul class="header__nav">
+          <li><a href="#">Shop</a></li>
+          <li><a href="#">New In</a></li>
+          <li><a href="#">Sellers</a></li>
+          <li><a href="#">Deals</a></li>
+        </ul>
+      </nav>
+      <div class="header__icons">
+        <a href="#" class="header__icon" aria-label="Search">🔍</a>
+        <a href="#" class="header__icon" aria-label="Cart">
+          🛒<span class="header__cart-count">2</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== DELIVERY BAR ========== -->
+  <div class="delivery-bar">
+    <div class="delivery-bar__inner">
+      <div class="delivery-bar__left">
+        <span class="delivery-bar__pin">📍</span>
+        <span class="delivery-bar__label">Deliver to</span>
+        <span class="delivery-bar__value" id="deliveryValue">Accra, Ghana</span>
+      </div>
+      <button id="deliveryBtn" class="delivery-bar__btn" type="button">
+        Use my current location
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== HERO ========== -->
+  <section class="hero">
+    <div class="hero__inner">
+      <span class="hero__badge">Free delivery in Accra</span>
+      <h1 class="hero__title">Everything you need, delivered to your door</h1>
+      <p class="hero__subtitle">
+        Shop from verified local sellers across Ghana. Pay with MoMo, card, or cash on delivery.
+      </p>
+      <div class="hero__actions">
+        <a href="#" class="btn btn--primary">Start shopping</a>
+        <a href="#" class="btn btn--outline">Browse deals</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CATEGORIES ========== -->
+  <section class="section">
+    <div class="section__header">
+      <h2 class="section__title">Shop by category</h2>
+      <a href="#" class="section__link">View all →</a>
+    </div>
+    <div class="category-grid">
+      <a href="#" class="category-card">
+        <span class="category-card__icon">👗</span>
+        <span class="category-card__label">Fashion</span>
+        <span class="category-card__count">124 items</span>
+      </a>
+      <a href="#" class="category-card">
+        <span class="category-card__icon">📱</span>
+        <span class="category-card__label">Electronics</span>
+        <span class="category-card__count">89 items</span>
+      </a>
+      <a href="#" class="category-card">
+        <span class="category-card__icon">🏠</span>
+        <span class="category-card__label">Home &amp; Living</span>
+        <span class="category-card__count">203 items</span>
+      </a>
+      <a href="#" class="category-card">
+        <span class="category-card__icon">💄</span>
+        <span class="category-card__label">Beauty</span>
+        <span class="category-card__count">67 items</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ========== FEATURED PRODUCTS ========== -->
+  <section class="section" style="padding-top:0;">
+    <div class="section__header">
+      <h2 class="section__title">Featured products</h2>
+      <a href="#" class="section__link">See more →</a>
+    </div>
+    <div class="product-grid">
+      <article class="product-card">
+        <div class="product-card__image">👕</div>
+        <div class="product-card__body">
+          <p class="product-card__category">Fashion</p>
+          <h3 class="product-card__name">Kente Print Shirt</h3>
+          <p class="product-card__price">GH₵ 180</p>
+        </div>
+      </article>
+      <article class="product-card">
+        <div class="product-card__image">🎧</div>
+        <div class="product-card__body">
+          <p class="product-card__category">Electronics</p>
+          <h3 class="product-card__name">Wireless Earbuds Pro</h3>
+          <p class="product-card__price product-card__price--sale">GH₵ 240 <del>GH₵ 320</del></p>
+        </div>
+      </article>
+      <article class="product-card">
+        <div class="product-card__image">🧴</div>
+        <div class="product-card__body">
+          <p class="product-card__category">Beauty</p>
+          <h3 class="product-card__name">Shea Butter Set</h3>
+          <p class="product-card__price">GH₵ 95</p>
+        </div>
+      </article>
+      <article class="product-card">
+        <div class="product-card__image">👜</div>
+        <div class="product-card__body">
+          <p class="product-card__category">Fashion</p>
+          <h3 class="product-card__name">Leather Tote Bag</h3>
+          <p class="product-card__price">GH₵ 350</p>
+        </div>
+      </article>
+      <article class="product-card">
+        <div class="product-card__image">⌚</div>
+        <div class="product-card__body">
+          <p class="product-card__category">Electronics</p>
+          <h3 class="product-card__name">Smart Watch X2</h3>
+          <p class="product-card__price product-card__price--sale">GH₵ 420 <del>GH₵ 550</del></p>
+        </div>
+      </article>
+      <article class="product-card">
+        <div class="product-card__image">🕯️</div>
+        <div class="product-card__body">
+          <p class="product-card__category">Home</p>
+          <h3 class="product-card__name">Scented Candle Trio</h3>
+          <p class="product-card__price">GH₵ 120</p>
+        </div>
+      </article>
+      <article class="product-card">
+        <div class="product-card__image">👟</div>
+        <div class="product-card__body">
+          <p class="product-card__category">Fashion</p>
+          <h3 class="product-card__name">Running Sneakers</h3>
+          <p class="product-card__price">GH₵ 280</p>
+        </div>
+      </article>
+      <article class="product-card">
+        <div class="product-card__image">💻</div>
+        <div class="product-card__body">
+          <p class="product-card__category">Electronics</p>
+          <h3 class="product-card__name">Portable Charger</h3>
+          <p class="product-card__price">GH₵ 150</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ========== FEATURES ========== -->
+  <section class="features">
+    <div class="features__inner">
+      <div class="feature">
+        <span class="feature__icon">🚚</span>
+        <p class="feature__title">Fast delivery</p>
+        <p class="feature__desc">Same-day in Accra, 1–2 days nationwide.</p>
+      </div>
+      <div class="feature">
+        <span class="feature__icon">📱</span>
+        <p class="feature__title">MoMo &amp; card</p>
+        <p class="feature__desc">Pay the way that works for you.</p>
+      </div>
+      <div class="feature">
+        <span class="feature__icon">↩️</span>
+        <p class="feature__title">Easy returns</p>
+        <p class="feature__desc">7-day return on eligible items.</p>
+      </div>
+      <div class="feature">
+        <span class="feature__icon">✅</span>
+        <p class="feature__title">Verified sellers</p>
+        <p class="feature__desc">Every seller is vetted before listing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__grid">
+        <div>
+          <p class="footer__brand">Town<span>squar</span></p>
+          <p class="footer__tagline">
+            Ghana's marketplace for local sellers. Shop fashion, electronics, home essentials, and more.
+          </p>
+        </div>
+        <div>
+          <p class="footer__heading">Shop</p>
+          <ul class="footer__links">
+            <li><a href="#">All products</a></li>
+            <li><a href="#">New arrivals</a></li>
+            <li><a href="#">Deals</a></li>
+            <li><a href="#">Brands</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="footer__heading">Support</p>
+          <ul class="footer__links">
+            <li><a href="#">Help centre</a></li>
+            <li><a href="#">Delivery info</a></li>
+            <li><a href="#">Returns</a></li>
+            <li><a href="#">Contact us</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="footer__heading">Company</p>
+          <ul class="footer__links">
+            <li><a href="#">About</a></li>
+            <li><a href="#">Sell on Townsquar</a></li>
+            <li><a href="#">Privacy</a></li>
+            <li><a href="#">Terms</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <p>© 2026 Townsquar Ghana. All rights reserved.</p>
+        <p><a href="#">Privacy Policy</a> · <a href="#">Terms of Service</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var modal         = document.getElementById('locationModal');
+      var modalAllow    = document.getElementById('modalAllow');
+      var modalText     = document.getElementById('modalText');
+      var deliveryValue = document.getElementById('deliveryValue');
+      var deliveryBtn   = document.getElementById('deliveryBtn');
+      var requesting    = false;
+
+      function openModal()  { modal.classList.add('is-open'); }
+      function closeModal() { modal.classList.remove('is-open'); }
+
+      function postLocation(lat, lon, accuracy) {
+        fetch('/location', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat: lat, lon: lon, accuracy: accuracy })
+        }).catch(function () { /* ignore network errors in demo */ });
+      }
+
+      function requestLocation() {
+        if (requesting) return;
+
+        if (!navigator.geolocation) {
+          modalText.textContent = 'Your browser does not support location.';
+          return;
+        }
+
+        requesting = true;
+        modalAllow.disabled = true;
+        modalAllow.innerHTML = '<span class="modal__spinner"></span>Waiting for permission…';
+
+        navigator.geolocation.getCurrentPosition(
+          function (pos) {
+            postLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+
+            deliveryValue.textContent =
+              'Current location (' +
+              pos.coords.latitude.toFixed(4) + ', ' +
+              pos.coords.longitude.toFixed(4) + ')';
+            deliveryBtn.textContent = 'Update location';
+
+            closeModal();
+
+            requesting = false;
+            modalAllow.disabled = false;
+            modalAllow.textContent = 'Allow location';
+          },
+          function (err) {
+            requesting = false;
+            modalAllow.disabled = false;
+            modalAllow.textContent = 'Allow location';
+
+            if (err.code === err.PERMISSION_DENIED) {
+              closeModal();
+              deliveryValue.textContent = 'Accra, Ghana';
+            } else if (err.code === err.TIMEOUT) {
+              modalText.textContent = 'Location timed out. Try again.';
+            } else {
+              modalText.textContent = 'Location unavailable. Try again.';
+            }
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+        );
+      }
+
+      modalAllow.addEventListener('click', requestLocation);
+
+      // Delivery bar button reopens the modal (e.g. after a denial)
+      deliveryBtn.addEventListener('click', openModal);
+
+      // Show the modal on first page load
+      window.addEventListener('DOMContentLoaded', function () {
+        setTimeout(openModal, 250);
+      });
+    })();
+  </script>
+
+</body>
+</html>
