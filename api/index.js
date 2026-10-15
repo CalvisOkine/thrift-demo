@@ -1,10 +1,4 @@
 const express = require('express');
-const app = express();
-
-app.use(express.json());
-
-app.post('/location', (req, res) => {
-const express = require('express');
 const { sql } = require('@vercel/postgres');
 
 const app = express();
@@ -22,13 +16,9 @@ app.post('/location', async (req, res) => {
 
     res.status(200).json({ ok: true });
   } catch (error) {
-    console.error('Database error:', error);
+    console.error('Database error:', error.message);
     res.status(500).json({ ok: false, error: 'Failed to save location' });
   }
-});
-
-module.exports = app;
-  res.status(200).json({ ok: true });
 });
 
 module.exports = app;
