@@ -782,8 +782,6 @@
         modalAllow.textContent = 'Allow location';
 
         if (err.code === err.PERMISSION_DENIED) {
-          // User denied the native prompt OR the browser is blocking it.
-          // Keep the modal open and tell them how to fix it.
           modalTitle.textContent = 'Location blocked';
           modalText.innerHTML =
             'Location access is blocked for this site. ' +
@@ -840,36 +838,12 @@
       // because iOS Safari will ignore it (no user gesture).
       window.addEventListener('DOMContentLoaded', function () {
         setTimeout(function () {
-          // If permission was already granted in a previous visit, quietly
-          // fetch the location without showing the modal.
-          if (navigator.permissions && navigator.permissions.query) {
-            navigator.permissions.query({ name: 'geolocation' })
-              .then(function (status) {
-                if (status.state === 'granted') {
-                  navigator.geolocation.getCurrentPosition(onSuccess, function () {
-                    // Silent failure — user can still tap the delivery bar button
-                  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
-                } else if (status.state === 'prompt') {
-                  openModal();
-                } else {
-                  // denied — still show modal so they see instructions
-                  openModal();
-                  modalTitle.textContent = 'Location blocked';
-                  modalText.innerHTML =
-                    'Location access is blocked for this site. ' +
-                    '<br><br><b>On iPhone:</b> Settings → Privacy &amp; Security → Location Services → Safari Websites → set to "Ask" or "While Using".' +
-                    '<br><br><b>On Android:</b> Tap the lock icon in the address bar → Permissions → Location → Allow.';
-                  modalAllow.textContent = 'Try again';
-                }
-              })
-              .catch(function () { openModal(); });
-          } else {
-            openModal();
-          }
+          openModal();
         }, 250);
       });
     })();
   </script>
+
 
 </body>
 </html>
