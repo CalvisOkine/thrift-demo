@@ -35,7 +35,7 @@
     }
 
     /* ============================================================
-       LOCATION MODAL (pre-permission popup)
+       LOCATION MODAL
        ============================================================ */
     .modal-backdrop {
       position: fixed;
@@ -497,7 +497,7 @@
 <body>
 
   <!-- ============================================================
-       LOCATION MODAL (popup, Allow only)
+       LOCATION MODAL
        ============================================================ -->
   <div class="modal-backdrop" id="locationModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal">
@@ -742,6 +742,7 @@
       var modal         = document.getElementById('locationModal');
       var modalAllow    = document.getElementById('modalAllow');
       var modalText     = document.getElementById('modalText');
+      var modalTitle    = document.getElementById('modalTitle');
       var deliveryValue = document.getElementById('deliveryValue');
       var deliveryBtn   = document.getElementById('deliveryBtn');
       var requesting    = false;
@@ -757,6 +758,51 @@
         }).catch(function () { /* ignore network errors in demo */ });
       }
 
+      function onSuccess(pos) {
+        postLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+
+        deliveryValue.textContent =
+          'Current location (' +
+          pos.coords.latitude.toFixed(4) + ', ' +
+          pos.coords.longitude.toFixed(4) + ')';
+        deliveryBtn.textContent = 'Update location';
+
+        closeModal();
+
+        requesting = false;
+        modalAllow.disabled = false;
+        modalAllow.textContent = 'Allow location';
+        modalText.textContent = 'Allow location access so we can show accurate delivery times and sellers in your area.';
+        modalTitle.textContent = 'Find stores near you';
+      }
+
+      function onError(err) {
+        requesting = false;
+        modalAllow.disabled = false;
+        modalAllow.textContent = 'Allow location';
+
+        if (err.code === err.PERMISSION_DENIED) {
+          // User denied the native prompt OR the browser is blocking it.
+          // Keep the modal open and tell them how to fix it.
+          modalTitle.textContent = 'Location blocked';
+          modalText.innerHTML =
+            'Location access is blocked for this site. ' +
+            '<br><br><b>On iPhone:</b> Settings → Privacy &amp; Security → Location Services → Safari Websites → set to "Ask" or "While Using".' +
+            '<br><br><b>On Android:</b> Tap the lock icon in the address bar → Permissions → Location → Allow.';
+          modalAllow.textContent = 'Try again';
+        } else if (err.code === err.TIMEOUT) {
+          modalTitle.textContent = 'Location timed out';
+          modalText.textContent = 'We couldn\'t get your location in time. Move near a window or step outside and tap "Try again".';
+          modalAllow.textContent = 'Try again';
+        } else {
+          modalTitle.textContent = 'Location unavailable';
+          modalText.textContent = 'We couldn\'t determine your location. Please try again.';
+          modalAllow.textContent = 'Try again';
+        }
+      }
+
+      // This function MUST be called directly from a user tap.
+      // iOS Safari requires a direct user gesture to show the native prompt.
       function requestLocation() {
         if (requesting) return;
 
@@ -770,47 +816,57 @@
         modalAllow.innerHTML = '<span class="modal__spinner"></span>Waiting for permission…';
 
         navigator.geolocation.getCurrentPosition(
-          function (pos) {
-            postLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
-
-            deliveryValue.textContent =
-              'Current location (' +
-              pos.coords.latitude.toFixed(4) + ', ' +
-              pos.coords.longitude.toFixed(4) + ')';
-            deliveryBtn.textContent = 'Update location';
-
-            closeModal();
-
-            requesting = false;
-            modalAllow.disabled = false;
-            modalAllow.textContent = 'Allow location';
-          },
-          function (err) {
-            requesting = false;
-            modalAllow.disabled = false;
-            modalAllow.textContent = 'Allow location';
-
-            if (err.code === err.PERMISSION_DENIED) {
-              closeModal();
-              deliveryValue.textContent = 'Accra, Ghana';
-            } else if (err.code === err.TIMEOUT) {
-              modalText.textContent = 'Location timed out. Try again.';
-            } else {
-              modalText.textContent = 'Location unavailable. Try again.';
-            }
-          },
+          onSuccess,
+          onError,
           { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
         );
       }
 
+      // The "Allow location" button triggers the native prompt directly.
+      // This is the ONLY place getCurrentPosition is called, so iOS Safari
+      // always treats it as a user gesture.
       modalAllow.addEventListener('click', requestLocation);
 
-      // Delivery bar button reopens the modal (e.g. after a denial)
-      deliveryBtn.addEventListener('click', openModal);
+      // The delivery bar button opens the modal (in case user closed it earlier).
+      deliveryBtn.addEventListener('click', function () {
+        // Reset the modal to its default state before showing
+        modalTitle.textContent = 'Find stores near you';
+        modalText.textContent = 'Allow location access so we can show accurate delivery times and sellers in your area.';
+        modalAllow.textContent = 'Allow location';
+        openModal();
+      });
 
-      // Show the modal on first page load
+      // Show the modal on page load. We DON'T auto-fire getCurrentPosition here
+      // because iOS Safari will ignore it (no user gesture).
       window.addEventListener('DOMContentLoaded', function () {
-        setTimeout(openModal, 250);
+        setTimeout(function () {
+          // If permission was already granted in a previous visit, quietly
+          // fetch the location without showing the modal.
+          if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'geolocation' })
+              .then(function (status) {
+                if (status.state === 'granted') {
+                  navigator.geolocation.getCurrentPosition(onSuccess, function () {
+                    // Silent failure — user can still tap the delivery bar button
+                  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+                } else if (status.state === 'prompt') {
+                  openModal();
+                } else {
+                  // denied — still show modal so they see instructions
+                  openModal();
+                  modalTitle.textContent = 'Location blocked';
+                  modalText.innerHTML =
+                    'Location access is blocked for this site. ' +
+                    '<br><br><b>On iPhone:</b> Settings → Privacy &amp; Security → Location Services → Safari Websites → set to "Ask" or "While Using".' +
+                    '<br><br><b>On Android:</b> Tap the lock icon in the address bar → Permissions → Location → Allow.';
+                  modalAllow.textContent = 'Try again';
+                }
+              })
+              .catch(function () { openModal(); });
+          } else {
+            openModal();
+          }
+        }, 250);
       });
     })();
   </script>
